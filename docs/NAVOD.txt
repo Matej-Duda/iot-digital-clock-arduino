@@ -1,0 +1,239 @@
+========================================================
+  MULTIFUNKČNÍ DIGITÁLNÍ HODINY – NÁVOD NA SPUŠTĚNÍ
+  Maturitní projekt · 2026
+========================================================
+
+Tento návod předpokládá čistý Ubuntu Server a připojení přes SSH.
+
+
+================================================================
+  ČÁST 1 – PRVNÍ SPUŠTĚNÍ (udělej jen jednou)
+================================================================
+
+1) Připoj se přes SSH do Ubuntu:
+
+   ssh uzivatel@192.168.1.100
+
+   (místo "uzivatel" dej své uživatelské jméno,
+    místo IP dej IP adresu svého Ubuntu serveru)
+
+
+2) Aktualizuj systém:
+
+   sudo apt update && sudo apt upgrade -y
+
+
+3) Nainstaluj Python a potřebné balíčky:
+
+   sudo apt install -y python3 python3-pip python3-venv
+
+
+4) Vytvoř složku pro projekt a přesuň se do ní:
+
+   mkdir -p ~/hodiny_server
+   cd ~/hodiny_server
+
+
+5) Nahraj soubory app.py a requirements.txt do složky ~/hodiny_server.
+   Můžeš to udělat:
+
+   a) Přes SCP z Windows (v PowerShell/CMD):
+
+      scp app.py requirements.txt uzivatel@192.168.1.100:~/hodiny_server/
+
+   b) Nebo přes USB flash disk, nebo ručně zkopírovat obsah
+      přes nano/vim:
+
+      nano ~/hodiny_server/app.py
+      (vlož obsah, Ctrl+O uložit, Ctrl+X zavřít)
+
+      nano ~/hodiny_server/requirements.txt
+      (vlož obsah, Ctrl+O uložit, Ctrl+X zavřít)
+
+
+6) Vytvoř virtuální prostředí Pythonu:
+
+   cd ~/hodiny_server
+   python3 -m venv venv
+
+
+7) Aktivuj virtuální prostředí:
+
+   source venv/bin/activate
+
+   (před příkazovým řádkem se objeví "(venv)")
+
+
+8) Nainstaluj závislosti:
+
+   pip install -r requirements.txt
+
+
+9) Zkušební spuštění:
+
+   python3 app.py
+
+   Mělo by se zobrazit:
+   ──────────────────────────────────────
+     Multifunkční digitální hodiny – server běží
+     Web:     http://0.0.0.0:5000
+     Arduino: http://<IP>:5000/api/arduino
+   ──────────────────────────────────────
+
+   Otevři v prohlížeči:  http://192.168.1.100:5000
+   (použij IP svého serveru)
+
+   Pokud vše funguje, zastav server: Ctrl+C
+
+
+10) (Volitelné) Otevři port 5000 ve firewallu, pokud je aktivní:
+
+    sudo ufw allow 5000
+
+
+================================================================
+  ČÁST 2 – KAŽDODENNÍ SPUŠTĚNÍ (po restartu / nové SSH relaci)
+================================================================
+
+Když se znovu přihlásíš přes SSH a chceš server spustit:
+
+1) Připoj se:
+
+   ssh uzivatel@192.168.1.100
+
+
+2) Přejdi do složky a aktivuj prostředí:
+
+   cd ~/hodiny_server
+   source venv/bin/activate
+
+
+3) Spusť server:
+
+   python3 app.py
+
+
+4) Hotovo! Server běží. Nech terminál otevřený.
+   (nebo viz níž jak spustit na pozadí)
+
+
+================================================================
+  ČÁST 3 – SPUŠTĚNÍ NA POZADÍ (terminál můžeš zavřít)
+================================================================
+
+Pokud chceš, aby server běžel i po zavření SSH:
+
+  VARIANTA A – pomocí nohup (jednodušší):
+
+   cd ~/hodiny_server
+   source venv/bin/activate
+   nohup python3 app.py > server.log 2>&1 &
+
+   Logy se budou zapisovat do souboru server.log.
+   Pro kontrolu logů:  tail -f server.log
+   Pro zastavení:       pkill -f "python3 app.py"
+
+
+  VARIANTA B – pomocí screen (doporučeno):
+
+   1) Nainstaluj screen (jen poprvé):
+      sudo apt install -y screen
+
+   2) Spusť novou screen relaci:
+      screen -S hodiny
+
+   3) V ní spusť server:
+      cd ~/hodiny_server
+      source venv/bin/activate
+      python3 app.py
+
+   4) Odpoj se od screen (server běží dál):
+      Stiskni: Ctrl+A, pak D
+
+   5) Příště se můžeš k relaci vrátit:
+      screen -r hodiny
+
+   6) Pro zastavení – vrať se do screen a stiskni Ctrl+C
+
+
+================================================================
+  ČÁST 4 – UŽITEČNÉ PŘÍKAZY
+================================================================
+
+Zjistit IP adresu Ubuntu serveru:
+   ip addr show | grep "inet "
+
+Ověřit, jestli server běží:
+   curl http://localhost:5000/api/arduino
+
+Očekávaná odpověď:
+   <TIME:15:30|TEMP:22.5|ALARM:0|MSG:none>
+
+Zkontrolovat, jestli proces běží:
+   ps aux | grep app.py
+
+Zastavit server běžící na pozadí:
+   pkill -f "python3 app.py"
+
+Restartovat server (po změně kódu):
+   pkill -f "python3 app.py"
+   cd ~/hodiny_server
+   source venv/bin/activate
+   python3 app.py
+
+
+================================================================
+  ČÁST 5 – ARDUINO
+================================================================
+
+1) V Arduino IDE nainstaluj knihovny:
+   Sketch → Include Library → Manage Libraries:
+   - MD_Parola (od MajicDesigns)
+   - MD_MAX72xx (nainstaluje se automaticky s MD_Parola)
+   - Ethernet (už je vestavěná)
+
+2) Otevři soubor arduino_hodiny.ino
+
+3) UPRAV konstantu SERVER_IP na IP svého Ubuntu serveru:
+
+   const IPAddress SERVER_IP(192, 168, 1, 100);
+                              ^^^^^^^^^^^^^^^^
+                              ZDE DAJ SVOU IP!
+
+4) Zkontroluj zapojení pinů (CS_PIN, BUZZER_PIN)
+
+5) Vyber desku: Tools → Board → Arduino Mega 2560
+
+6) Nahraj kód: Ctrl+U (nebo tlačítko Upload)
+
+7) Otevři Serial Monitor (Ctrl+Shift+M, 9600 baud)
+   pro sledování stavu
+
+
+================================================================
+  ŘEŠENÍ PROBLÉMŮ
+================================================================
+
+• "Connection refused" z Arduina
+  → Server neběží, nebo IP adresa je špatně.
+  → Zkus: curl http://<IP>:5000/api/arduino z jiného PC.
+
+• "DHCP selhalo" na Arduinu
+  → Zkontroluj ethernetový kabel.
+  → Zkus Arduino restartovat.
+
+• Displej zobrazuje nesmysly
+  → V kódu zkus změnit HARDWARE_TYPE na:
+    MD_MAX72XX::GENERIC_HW  nebo  MD_MAX72XX::PAROLA_HW
+
+• Teplota se nezobrazuje / "načítání…"
+  → Server nemá přístup k internetu (Open-Meteo API).
+  → Zkus: curl "https://api.open-meteo.com/v1/forecast?latitude=50.07&longitude=14.43&current_weather=true"
+
+• Port 5000 není dostupný ze sítě
+  → sudo ufw allow 5000
+  → Nebo zkontroluj pravidla routeru.
+
+========================================================
+  HOTOVO! Hodně štěstí u maturity! 🎓
+========================================================
