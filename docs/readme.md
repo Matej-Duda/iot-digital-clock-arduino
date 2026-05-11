@@ -49,15 +49,3 @@ Upload to the Arduino Mega 2560.
 
 License
 Open-source. Feel free to use and modify for your own IoT hardware projects.
-
-
-### 4. Odeslání na GitHub (přes Terminál / Příkazovou řádku)
-Otevři terminál ve složce `maturita_repo` a postupně zadej tyto příkazy (nezapomeň upravit odkaz ve 4. kroku podle svého GitHubu):
-
-```bash
-git init
-git add .
-git commit -m "Initial commit: IoT Digital Clock and Flask Server"
-git branch -M main
-git remote add origin https://github.com/TVUJ_NICK/NAZEV_REPA.git
-git push -u origin main
